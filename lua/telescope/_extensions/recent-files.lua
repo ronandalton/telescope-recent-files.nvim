@@ -316,6 +316,8 @@ local recent_files = function(opts)
     end
   end
 
+  -- TODO: filter out recent files that are hidden if not opts.hidden
+
   -- Remove gitignored files from recent results if desired (maybe not a thorough as what ripgrep does)
   if not opts.no_ignore then
     if vim.fn.executable "git" == 0 then
