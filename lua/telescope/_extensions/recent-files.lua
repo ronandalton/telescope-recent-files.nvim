@@ -305,7 +305,7 @@ local recent_files = function(opts)
           invalid_path_found = true
         end
       end
-      opts.results[#opts.results + 1] = entry
+      table.insert(opts.results, entry)
     end
 
     if invalid_path_found then
@@ -313,6 +313,44 @@ local recent_files = function(opts)
         msg = "One or more paths returned from oldfiles did not start with cwd. Results may have duplicates.",
         level = "WARN",
       })
+    end
+  end
+
+  -- Remove gitignored files from recent results if desired (maybe not a thorough as what ripgrep does)
+  if not opts.no_ignore then
+    if vim.fn.executable "git" == 0 then
+      utils.notify("extension.recent-files", {
+        msg = "Git command not available. Results may include ignored files.",
+        level = "WARN",
+      })
+    else
+      local packed_file_list = ""
+
+      for _, entry in ipairs(opts.results) do
+        if entry.filename ~= nil then
+          packed_file_list = packed_file_list .. entry.filename .. "\0"
+        end
+      end
+
+      local check_ignore_result = vim
+        .system({ "git", "check-ignore", "-z", "--stdin" }, { stdin = packed_file_list, cwd = opts.cwd })
+        :wait()
+
+      if check_ignore_result.code > 1 then
+        utils.notify("extension.recent-files", {
+          msg = 'An error occurred while running "git check-ignore" command. Results may include ignored files.',
+          level = "WARN",
+        })
+      else
+        local ignored_files_lookup = {}
+        for ignored_file in string.gmatch(check_ignore_result.stdout, "([^%z]+)") do
+          ignored_files_lookup[ignored_file] = true
+        end
+
+        opts.results = vim.tbl_filter(function(entry)
+          return not ignored_files_lookup[entry.filename]
+        end, opts.results)
+      end
     end
   end
 

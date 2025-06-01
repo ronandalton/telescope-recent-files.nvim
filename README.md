@@ -24,6 +24,8 @@ Lazy:
 },
 ```
 
+Note that `git` must also be installed so that files in .gitignore can be filtered out of recent search results.
+
 ## Options
 
 The following options can be specified (default values are given):
