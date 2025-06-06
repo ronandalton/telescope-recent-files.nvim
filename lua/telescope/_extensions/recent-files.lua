@@ -338,12 +338,7 @@ local recent_files = function(opts)
         .system({ "git", "check-ignore", "-z", "--stdin" }, { stdin = packed_file_list, cwd = opts.cwd })
         :wait()
 
-      if check_ignore_result.code > 1 then
-        utils.notify("extension.recent-files", {
-          msg = 'An error occurred while running "git check-ignore" command. Results may include ignored files.',
-          level = "WARN",
-        })
-      else
+      if check_ignore_result.code <= 1 then
         local ignored_files_lookup = {}
         for ignored_file in string.gmatch(check_ignore_result.stdout, "([^%z]+)") do
           ignored_files_lookup[ignored_file] = true
